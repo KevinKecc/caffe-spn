@@ -1,0 +1,15 @@
+name: "TEST"
+input: "data"
+input_dim: 1
+input_dim: 1200
+input_dim: 40
+input_dim: 30
+
+force_backward: true
+
+layer {
+  name: "testlayer"
+  type: "SoftProposal" 
+  bottom: "data"
+  top: "testlayer"
+}
