@@ -1,5 +1,7 @@
 #include <cstdio>  
-#include <vector>  
+#include <vector>
+#include <sstream>
+#include <boost/filesystem.hpp>
 
 #include "caffe/util/im2col.hpp"   
 #include "caffe/util/math_functions.hpp"  
@@ -7,11 +9,16 @@
 #include "caffe/util/io.hpp"  
 
 namespace caffe {  
+
+using ::boost::filesystem::path;
+
 // Layer setup 
 template <typename Dtype>  
 void SoftProposalLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const SoftProposalParameter& soft_proposal_param = this->layer_param_.soft_proposal_param(); 
+    
+  dm_folder_ = soft_proposal_param.dm_folder();
   if(soft_proposal_param.has_tolerance()) 
     tolerance_ = soft_proposal_param.tolerance();
   else
@@ -58,6 +65,24 @@ template <typename Dtype>
 void SoftProposalLayer<Dtype>::InitDistanceMetricKernel(){
   Dtype* distanceMetric_data = distanceMetric_.mutable_cpu_data();  
   
+  
+  if(!boost::filesystem::exists(dm_folder_))
+  {
+    LOG(INFO) << dm_folder_.c_str();
+    boost::filesystem::create_directory(dm_folder_);
+  }
+    
+  stringstream s;
+  s<< dm_folder_ << "/dm_" << height_ << "_" << width_ << ".blob";;
+  string dm_filename=s.str();
+  if(boost::filesystem::exists(dm_filename.c_str()))
+  {
+    BlobProto dm;
+    ReadProtoFromBinaryFile(dm_filename, &dm);
+    distanceMetric_.FromProto(dm);
+    return;
+  }
+  
   long nthreads = N_ * N_;
   for(long n=0;n<nthreads;n++)
   {
@@ -72,7 +97,11 @@ void SoftProposalLayer<Dtype>::InitDistanceMetricKernel(){
         *(distanceMetric_data + n) = expf(((i - p) * (i - p) + (j - q) * (j - q)) / (-2 * factor_ * factor_));
         *(distanceMetric_data + v*N_ + u) = *(distanceMetric_data + n);
     }
-  }   
+  } 
+  
+  BlobProto dm;
+  distanceMetric_.ToProto(&dm, false);
+  WriteProtoToBinaryFile(dm, dm_filename.c_str());   
 }
 
 template <typename Dtype> 

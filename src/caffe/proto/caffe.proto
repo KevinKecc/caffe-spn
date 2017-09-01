@@ -425,6 +425,8 @@ message SoftProposalParameter {
   optional float tolerance = 2;
   // max iteration for PageRank
   optional float maxiteration = 3;
+  // the folder used to sace distance metrix
+  optional string dm_folder = 5 [default = ""];
 }
 
 // message that stores paremeters used to maxout layers

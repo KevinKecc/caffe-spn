@@ -61,6 +61,7 @@ class SoftProposalLayer : public NeuronLayer<Dtype> {
   float factor_;
   float tolerance_;
   int maxIteration_;
+  string dm_folder_;
   Blob<Dtype> proposal_; 
   Blob<Dtype> distanceMetric_; 
   Blob<Dtype> transferMatrix_;
